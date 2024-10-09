@@ -1,50 +1,53 @@
-import { StatusBar } from "expo-status-bar";
-import { StyleSheet, View} from "react-native";
-import * as ImagePicker from 'expo-image-picker';
-import Button from '../components/Button'; 
-import ImageViewer from '../components/ImageViewer';
+import firebase from 'firebase/compat/app';
+import 'firebase/compat/firestore';
 
-const PlaceholderImage = require("../assets/images/background-image.png");
+const firebaseConfig = {
+  apiKey: "",
+  authDomain: "",
+  projectId: "",
+  storageBucket: "",
+  messagingSenderId: "",
+  appId: ""
+};
+
+
+firebase.initializeApp(firebaseConfig);
+
+
+import React, { useEffect, useState } from 'react';
+import { View, Text, FlatList } from 'react-native';
 
 export default function App() {
-  const pickImageAsync = async () => {
-    let result = await ImagePicker.launchImageLibraryAsync({
-      allowsEditing: true,
-      quality: 1,
-    });
+  const [nomes, setNomes] = useState([]);
 
-    if (!result.canceled) {
-      console.log(result);
-    } else {
-      alert('You did not select any image.');
-    }
-  };
+  useEffect(() => {
+    const fetchData = async () => {
+      const nomesCollection = firebase.firestore().collection('Nomes');
+      const snapshot = await nomesCollection.get();
+
+      const data = [];
+      snapshot.forEach((doc) => {
+        data.push({ id: doc.id, ...doc.data() });
+      });
+
+      setNomes(data);
+    };
+
+    fetchData();
+  }, []);
+
   return (
-    <View style={styles.container}>
-      <View style={styles.imageContainer}>
-        <ImageViewer placeholderImageSource={PlaceholderImage} />
-      </View>
-      <View style={styles.footerContainer}>
-      <Button theme="primary" label="Choose a photo" onPress={pickImageAsync}/>
-      <Button label="Use this photo" />
-      </View>
-      <StatusBar style="auto" />
+    <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+      <Text>Lista de Nomes:</Text>
+      <FlatList
+        data={nomes}
+        keyExtractor={(item) => item.id}
+        renderItem={({ item }) => (
+          <View>
+            <Text>{item.Nome} {item.Sobrenome}</Text>
+          </View>
+        )}
+      />
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#25292e',
-    alignItems: 'center',
-  },
-  imageContainer: {
-    flex: 1,
-    paddingTop: 58,
-  },
-  footerContainer: {
-    flex: 1 / 3,
-    alignItems: 'center',
-  },
-});
